@@ -4,7 +4,7 @@ import threading
 def update_cup_number(customer_name):
     thread_name = threading.current_thread().name
 
-    print(f"{ctime()} | [{thread_name}] LCD: Processing cup number for customer {customer_name}...")
+    print(f"{ctime()} | [{thread_name}] LCD: Processing for customer {customer_name}...")
     sleep(1)
     print(f"{ctime()} | [{thread_name}] LCD: Done for customer {customer_name}.")
 
