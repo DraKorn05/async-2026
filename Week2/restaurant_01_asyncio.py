@@ -1,61 +1,55 @@
+from time import ctime, time
 import asyncio
-import time
+
+# --- Derived from restaurant_01_thread.py / restaurant_01_multiprocess.py ---
+# Same 2-phase pattern:
+#   Phase 1: Greeting -> sequential (only ONE front-desk worker)
+#   Phase 2: Private workflow -> concurrent (start all tasks first, await later)
+# Threading used threading.Thread + start()/join()
+# Multiprocessing used multiprocessing.Process + start()/join()
+# Asyncio replaces both with create_task() + await asyncio.gather()
 
 
-def log(message: str) -> None:
-    """Print a message prefixed with a human-readable timestamp."""
-    print(f"{time.ctime()}  {message}")
+async def greet_diners(customer):
+    print(f"{ctime()} Greeting for Customer-{customer} ...")
+    await asyncio.sleep(1)  # non-blocking delay (was: sleep(1))
+    print(f"{ctime()} Greeting for Customer-{customer} ...Done!")
 
 
-async def greet_customer(name: str) -> None:
-    """Greeting is done one at a time, in order (sequential await)."""
-    log(f"Greeting for {name} ...")
-    await asyncio.sleep(1)
-    log(f"Greeting for {name} ...Done!")
+async def customer_private_workflow(customer):
+    print(f"{ctime()}   [Task-{customer}] Taking Order ...")
+    await asyncio.sleep(1)  # Simulate a delay in taking order
+    print(f"{ctime()}   [Task-{customer}] Taking Order ...Done!")
+
+    print(f"{ctime()}   [Task-{customer}] Cooking Spaghetti ...")
+    await asyncio.sleep(1)  # Simulate a delay in cooking
+    print(f"{ctime()}   [Task-{customer}] Cooking Spaghetti ...Done!")
+
+    print(f"{ctime()}   [Task-{customer}] Manage Bar for Drink ...")
+    await asyncio.sleep(1)  # Simulate a delay in preparing the drink
+    print(f"{ctime()}   [Task-{customer}] Manage Bar for Drink ...Done!")
+    print(f"{ctime()}   [Task-{customer}] All served!\n")
 
 
-async def customer_flow(name: str) -> None:
-    """
-    Each customer's full order flow runs as an independent async task.
-    While one task is 'waiting' (e.g. spaghetti cooking), the single
-    worker (event loop) switches to progress another task.
-    """
-    log(f"  [{name}] Taking Order ...")
-    await asyncio.sleep(1)
-    log(f"  [{name}] Taking Order ...Done!")
+async def main():
+    customers = ["A", "B", "C"]
+    start_time = time()
 
-    log(f"  [{name}] Cooking Spaghetti ...")
-    await asyncio.sleep(1)
-    log(f"  [{name}] Cooking Spaghetti ...Done!")
+    # --- Phase 1: Sequential greeting (same as thread/multiprocess version) ---
+    for customer in customers:
+        await greet_diners(customer)
 
-    log(f"  [{name}] Manage Bar for Drink ...")
-    await asyncio.sleep(1)
-    log(f"  [{name}] Manage Bar for Drink ...Done!")
+    print(f"\n{ctime()} --- All customers greeted. Scheduling independent Async Tasks! ---\n")
 
-    log(f"  [{name}] All served!")
+    # --- Phase 2: Concurrent workflow ---
+    # create_task() FIRST for every customer (like thread.start() / process.start())
+    tasks = [asyncio.create_task(customer_private_workflow(c)) for c in customers]
 
-
-async def main() -> None:
-    start = time.perf_counter()
-
-    # Step 1: greet each customer one at a time (sequential)
-    for name in ["Customer-A", "Customer-B", "Customer-C"]:
-        await greet_customer(name)
-
-    print()
-    log("--- All customers greeted. Scheduling independent Async Tasks! ---")
-    print()
-
-    # Step 2: run each customer's full flow concurrently as independent tasks
-    tasks = [
-        asyncio.create_task(customer_flow(name), name=name)
-        for name in ["Task-A", "Task-B", "Task-C"]
-    ]
+    # then await ALL of them together (like thread.join() / process.join())
     await asyncio.gather(*tasks)
 
-    elapsed = time.perf_counter() - start
-    print()
-    log(f"Finished Entire Restaurant Operation in {elapsed:.2f} seconds.")
+    duration = time() - start_time
+    print(f"{ctime()} Finished Entire Restaurant Operation in {duration:.2f} seconds.")
 
 
 if __name__ == "__main__":
