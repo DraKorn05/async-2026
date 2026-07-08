@@ -1,44 +1,37 @@
-# Delivery System): นักศึกษาต้องเขียน try...except CancelledError ได้ถูกต้อง 
-# และใช้ .get_name(), .cancel(), และ .cancelled() ได้
-
 import asyncio
 from time import ctime
 
 
 async def delivery_task(package_id, duration):
-    """จำลองการส่งพัสดุด้วย asyncio.sleep(duration)"""
-    print(f"{ctime()} Start delivering package {package_id} (ETA {duration}s)")
-    await asyncio.sleep(duration)
-    return f"Package {package_id} Delivered!"
+    try:
+        print(f"{ctime()} Courier started delivering {package_id}...")
+        await asyncio.sleep(duration)
+        return f"Package {package_id} Delivered!"
+    except asyncio.CancelledError:
+        print(f"{ctime()} Delivery Canceled! Returning package to warehouse.")
+        raise
 
 
 async def main():
-    # 2. สร้าง Task จาก delivery_task และตั้งชื่อว่า "Express-Courier"
     task = asyncio.create_task(
-        delivery_task(package_id="P001", duration=5.0),
+        delivery_task("P001", 5.0),
         name="Express-Courier"
     )
 
+    await asyncio.sleep(2)
+
+    print(f"{ctime()} Checking task '{task.get_name()}'. Is it done? {task.done()}")
+
+    if not task.done():
+        print(f"{ctime()} Taking too long! Canceling the task...")
+        task.cancel()
+
     try:
-        # 3. ระหว่างพัสดุกำลังเดินทาง (ผ่านไป 2 วินาที) ตรวจสอบสถานะ
-        await asyncio.sleep(2)
-        print(f"{ctime()} Checking status of task: {task.get_name()}")
-        print(f"{ctime()} Is '{task.get_name()}' done? {task.done()}")
-
-        # 4. หากส่งของนานเกินไป (ผ่านไป 2 วินาทีแล้วยังไม่เสร็จ) ให้ยกเลิกงาน
-        if not task.done():
-            print(f"{ctime()} Delivery is taking too long! Cancelling '{task.get_name()}'...")
-            task.cancel()
-
-        # ต้อง await task เพื่อให้ CancelledError ถูกโยนขึ้นมาให้เราจับ
-        result = await task
-        print(f"{ctime()} Result: {result}")
-
+        await task
     except asyncio.CancelledError:
-        # 5. ดักจับ CancelledError
-        print(f"{ctime()} Delivery Canceled! Returning package to warehouse.")
-        print(f"{ctime()} Is '{task.get_name()}' cancelled now? {task.cancelled()}")
+        pass
+
+    print(f"{ctime()} Final verify: Is task officially canceled? {task.cancelled()}")
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+asyncio.run(main())
