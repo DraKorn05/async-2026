@@ -1,4 +1,3 @@
-import asyncio
 from time import sleep,time, ctime
 
 #greeting customers synchronously
@@ -28,7 +27,7 @@ def mini_bar(costomer):
     
 if __name__ == "__main__":
     
-    customers = ["A, B, C"]
+    customers = ["A", "B", "C"]
     start = time()
     
     for customer in customers:

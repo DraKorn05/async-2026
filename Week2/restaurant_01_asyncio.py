@@ -1,15 +1,6 @@
 from time import ctime, time
 import asyncio
 
-# --- Derived from restaurant_01_thread.py / restaurant_01_multiprocess.py ---
-# Same 2-phase pattern:
-#   Phase 1: Greeting -> sequential (only ONE front-desk worker)
-#   Phase 2: Private workflow -> concurrent (start all tasks first, await later)
-# Threading used threading.Thread + start()/join()
-# Multiprocessing used multiprocessing.Process + start()/join()
-# Asyncio replaces both with create_task() + await asyncio.gather()
-
-
 async def greet_diners(customer):
     print(f"{ctime()} Greeting for Customer-{customer} ...")
     await asyncio.sleep(1)  # non-blocking delay (was: sleep(1))

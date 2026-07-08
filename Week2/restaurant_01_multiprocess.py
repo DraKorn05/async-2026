@@ -34,20 +34,20 @@ if __name__ == "__main__":
 # PHASE 1: Greet ลูกค้าทีละคนแบบ Synchronous (เข้าใจชื่อก่อนลงสั่งงาน)
 # ----------------------------------------------------------
 
-for customer in customers:
-    greet_diners(customer)
+    for customer in customers:
+        greet_diners(customer)
 
-print(f"\n{ctime()} === All customers greeted. Splitting into individual workflows ===\n")
+    print(f"\n{ctime()} === All customers greeted. Splitting into individual workflows ===\n")
 
 
-processes = []
-for customer in customers:
-    p = multiprocessing.Process(target=customer_private_workflow, args=(customer,))
-    processes.append(p)
-    p.start()
+    processes = []
+    for customer in customers:
+     p = multiprocessing.Process(target=customer_private_workflow, args=(customer,))
+     processes.append(p)
+     p.start()
 
-for p in processes:
-    p.join()
+    for p in processes:
+        p.join()
     
-duration = time() - start_time
-print(f"{ctime()} Finished Entire Restaurant Operation in {duration:.2f} seconds")
+    duration = time() - start_time
+    print(f"{ctime()} Finished Entire Restaurant Operation in {duration:.2f} seconds")
